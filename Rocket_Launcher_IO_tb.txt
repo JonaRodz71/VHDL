@@ -1,0 +1,59 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.ALL;
+USE ieee.std_logic_textio.ALL;
+USE std.textio.ALL;
+
+ENTITY Rocket_Launcher_tb IS
+END Rocket_Launcher_tb;
+
+ARCHITECTURE behavior OF Rocket_Launcher_tb IS 
+
+    -- Component Declaration for the Unit Under Test (UUT)
+    COMPONENT Rocket_Launcher
+    PORT(
+         A : IN  std_logic;
+         B : IN  std_logic;
+         C : IN  std_logic;
+         F : OUT std_logic
+        );
+    END COMPONENT;
+   
+    -- Signals to connect with the UUT
+    SIGNAL A : std_logic := '0';
+    SIGNAL B : std_logic := '0';
+    SIGNAL C : std_logic := '0';
+    SIGNAL F : std_logic;
+
+BEGIN
+
+    -- Instantiate the Unit Under Test (UUT)
+    uut: Rocket_Launcher PORT MAP (
+          A => A,
+          B => B,
+          C => C,
+          F => F
+        );
+
+    -- File-based stimulus process
+    stim_proc: PROCESS
+        FILE input_file : TEXT OPEN READ_MODE IS "input_data.txt";
+        VARIABLE line_buf : LINE;
+        VARIABLE bit_vector : STD_LOGIC_VECTOR(3 DOWNTO 0);
+    BEGIN		
+        -- Read input values from the file
+        WHILE NOT endfile(input_file) LOOP
+            READLINE(input_file, line_buf);
+            READ(line_buf, bit_vector);
+
+            -- Assign values
+            A <= bit_vector(3);
+            B <= bit_vector(2);
+            C <= bit_vector(1);
+            WAIT FOR 10 ns;
+        END LOOP;
+        
+        -- Stop simulation
+        WAIT;
+    END PROCESS;
+
+END behavior;
