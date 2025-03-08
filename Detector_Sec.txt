@@ -1,0 +1,58 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.ALL;
+USE ieee.std_logic_textio.ALL;
+USE std.textio.ALL;
+
+ENTITY Sequence_Detector IS
+    PORT (
+        clk    : IN std_logic;
+        resetn : IN std_logic;
+        w      : IN std_logic;
+        z      : OUT std_logic
+    );
+END Sequence_Detector;
+
+ARCHITECTURE Behavioral OF Sequence_Detector IS
+    TYPE state_type IS (S0, S1, S2, S3, S4, S5, S6, S7, S8);
+    SIGNAL state, next_state : state_type;
+BEGIN
+
+    -- Sequential Process for State Register
+    PROCESS (clk, resetn)
+    BEGIN
+        IF resetn = '0' THEN
+            state <= S0;  -- Reset to initial state
+        ELSIF rising_edge(clk) THEN
+            state <= next_state;  -- Move to next state
+        END IF;
+    END PROCESS;
+
+    -- Combinational Process for State Transitions
+    PROCESS (state, w)
+    BEGIN
+        CASE state IS
+            WHEN S0 => 
+                IF w = '1' THEN next_state <= S1; ELSE next_state <= S0; END IF;
+            WHEN S1 => 
+                IF w = '0' THEN next_state <= S2; ELSE next_state <= S1; END IF;
+            WHEN S2 => 
+                IF w = '0' THEN next_state <= S3; ELSE next_state <= S1; END IF;
+            WHEN S3 => 
+                IF w = '0' THEN next_state <= S4; ELSE next_state <= S1; END IF;
+            WHEN S4 => 
+                IF w = '0' THEN next_state <= S5; ELSE next_state <= S1; END IF;
+            WHEN S5 => 
+                IF w = '0' THEN next_state <= S6; ELSE next_state <= S1; END IF;
+            WHEN S6 => 
+                IF w = '0' THEN next_state <= S7; ELSE next_state <= S1; END IF;
+            WHEN S7 => 
+                IF w = '1' THEN next_state <= S8; ELSE next_state <= S1; END IF;
+            WHEN S8 => 
+                next_state <= S0; -- Reset to initial state after detection
+        END CASE;
+    END PROCESS;
+
+    -- Output Logic
+    z <= '1' WHEN state = S8 ELSE '0';
+
+END Behavioral;
