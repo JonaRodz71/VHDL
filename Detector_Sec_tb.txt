@@ -1,0 +1,81 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.ALL;
+USE ieee.std_logic_textio.ALL;
+USE std.textio.ALL;
+
+ENTITY Sequence_Detector_tb IS
+END Sequence_Detector_tb;
+
+ARCHITECTURE behavior OF Sequence_Detector_tb IS 
+
+    -- DUT Component Declaration
+    COMPONENT Sequence_Detector
+    PORT(
+         clk    : IN std_logic;
+         resetn : IN std_logic;
+         w      : IN std_logic;
+         z      : OUT std_logic
+        );
+    END COMPONENT;
+
+    -- Signals for Testbench
+    SIGNAL clk    : std_logic := '0';
+    SIGNAL resetn : std_logic := '0';
+    SIGNAL w      : std_logic := '0';
+    SIGNAL z      : std_logic;
+
+    -- Clock Period Definition
+    CONSTANT clk_period : time := 10 ns;
+
+BEGIN
+
+    -- DUT Instantiation
+    uut: Sequence_Detector PORT MAP (
+          clk    => clk,
+          resetn => resetn,
+          w      => w,
+          z      => z
+        );
+
+    -- Clock Process
+    clk_process: PROCESS
+    BEGIN
+        WHILE TRUE LOOP
+            clk <= '0';
+            WAIT FOR clk_period / 2;
+            clk <= '1';
+            WAIT FOR clk_period / 2;
+        END LOOP;
+    END PROCESS;
+
+    -- File-Based Test Process
+    stim_proc: PROCESS
+        FILE input_file : TEXT OPEN READ_MODE IS "sequence_input.txt";
+        VARIABLE line_buf : LINE;
+        VARIABLE w_bit : CHARACTER;
+    BEGIN		
+        -- Apply reset
+        resetn <= '0';
+        WAIT FOR 20 ns;
+        resetn <= '1';
+
+        -- Read each bit from file and apply as input
+        WHILE NOT endfile(input_file) LOOP
+            READLINE(input_file, line_buf);
+            READ(line_buf, w_bit);
+
+            -- Convert character to std_logic
+            IF w_bit = '0' THEN
+                w <= '0';
+            ELSE
+                w <= '1';
+            END IF;
+
+            WAIT FOR clk_period;
+        END LOOP;
+
+        -- Stop simulation
+        WAIT;
+    END PROCESS;
+
+END behavior;
