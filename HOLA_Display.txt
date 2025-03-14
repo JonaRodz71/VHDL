@@ -1,0 +1,76 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+
+entity HOLA_Display is
+    Port ( clk  : in STD_LOGIC;      -- 100 MHz Clock Input
+           an   : out STD_LOGIC_VECTOR(3 downto 0); -- Active-low display enables
+           seg  : out STD_LOGIC_VECTOR(6 downto 0)  -- 7-segment outputs
+         );
+end HOLA_Display;
+
+architecture Behavioral of HOLA_Display is
+
+    signal refresh_clk : STD_LOGIC := '0'; -- Clock for display multiplexing
+    signal refresh_count : INTEGER := 0;
+    signal anode_control : INTEGER range 0 to 3 := 0; -- Controls active display
+    signal seg_output : STD_LOGIC_VECTOR(6 downto 0); -- Holds 7-segment pattern
+    signal seg_reg : STD_LOGIC_VECTOR(6 downto 0); -- Registered output
+    signal an_reg  : STD_LOGIC_VECTOR(3 downto 0); -- Registered output
+
+begin
+
+    -- Clock Divider for Display Multiplexing (~1 kHz refresh rate)
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            if refresh_count = 100000 then  -- ~1ms refresh rate
+                refresh_clk <= NOT refresh_clk;
+                refresh_count <= 0;
+            else
+                refresh_count <= refresh_count + 1;
+            end if;
+        end if;
+    end process;
+
+    -- 7-Segment Decoder (Assigns H, O, L, A to each digit)
+    process(anode_control)
+    begin
+        case anode_control is
+            when 0 => seg_output <= "1001000"; -- H
+            when 1 => seg_output <= "0000001"; -- O
+            when 2 => seg_output <= "1110001"; -- L
+            when 3 => seg_output <= "0001000"; -- A
+            when others => seg_output <= "0000000"; -- Default (Blank)
+        end case;
+    end process;
+
+    -- Display Multiplexing (Cycle through the four displays)
+    process(refresh_clk)
+    begin
+        if rising_edge(refresh_clk) then
+            anode_control <= (anode_control + 1) mod 4;
+        end if;
+    end process;
+
+    -- Register Outputs for Stability
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            seg_reg <= seg_output;
+            case anode_control is
+                when 0 => an_reg <= "0111"; -- Enable leftmost display
+                when 1 => an_reg <= "1011"; -- Enable second display
+                when 2 => an_reg <= "1101"; -- Enable third display
+                when 3 => an_reg <= "1110"; -- Enable rightmost display
+                when others => an_reg <= "1111"; -- Default (all off)
+            end case;
+        end if;
+    end process;
+
+    -- Assign registered outputs
+    seg <= seg_reg;
+    an <= an_reg;
+
+end Behavioral;
